@@ -11,13 +11,6 @@ import (
 
 const defaultSourcesURL = "https://raw.githubusercontent.com/hagezi/dns-blocklists/refs/heads/main/sources.md"
 
-// Match represents a single hit in a blocklist.
-type Match struct {
-	URL  string
-	Line int
-	Text string
-}
-
 // Scanner searches blocklist sources for a given query.
 type Scanner struct {
 	// Query is the case-insensitive search term.
@@ -36,25 +29,17 @@ type Scanner struct {
 	Client *http.Client
 }
 
-func (s *Scanner) client() *http.Client {
-	if s.Client != nil {
-		return s.Client
-	}
-	return http.DefaultClient
+// Match represents a single hit in a blocklist.
+type Match struct {
+	URL  string
+	Line int
+	Text string
 }
 
-func (s *Scanner) sourcesURL() string {
-	if s.SourcesURL != "" {
-		return s.SourcesURL
-	}
-	return defaultSourcesURL
-}
-
-func (s *Scanner) concurrency() int {
-	if s.Concurrency > 0 {
-		return s.Concurrency
-	}
-	return 20
+// Result holds the matches and errors from a Scan.
+type Result struct {
+	Matches []Match
+	Errors  []string
 }
 
 // FetchSources fetches sources.md and extracts all https:// URLs from code blocks.
@@ -94,12 +79,6 @@ func (s *Scanner) FetchSources(ctx context.Context) ([]string, error) {
 		return nil, fmt.Errorf("reading sources: %w", err)
 	}
 	return urls, nil
-}
-
-// Result holds the matches and errors from a Scan.
-type Result struct {
-	Matches []Match
-	Errors  []string
 }
 
 // Scan fetches all given URLs concurrently and searches each for s.Query.
@@ -179,4 +158,25 @@ func (s *Scanner) searchURL(ctx context.Context, url, query string) ([]Match, er
 		}
 	}
 	return matches, nil
+}
+
+func (s *Scanner) client() *http.Client {
+	if s.Client != nil {
+		return s.Client
+	}
+	return http.DefaultClient
+}
+
+func (s *Scanner) sourcesURL() string {
+	if s.SourcesURL != "" {
+		return s.SourcesURL
+	}
+	return defaultSourcesURL
+}
+
+func (s *Scanner) concurrency() int {
+	if s.Concurrency > 0 {
+		return s.Concurrency
+	}
+	return 20
 }
